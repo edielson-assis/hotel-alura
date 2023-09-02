@@ -2,18 +2,40 @@ CREATE DATABASE hotel_alura;
 
 USE hotel_alura;
 
-SET FOREIGN_KEY_CHECKS=0;
+-- ----------------------------
+-- Table structure for User
+-- ----------------------------
+DROP TABLE IF EXISTS User;
+CREATE TABLE User (
+    UserID INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    UserName VARCHAR(100) DEFAULT NULL,
+    Email VARCHAR(255) DEFAULT NULL,
+    Password VARCHAR(255) DEFAULT NULL,
+    VerifyCode CHAR(6) DEFAULT NULL,
+    Status CHAR(8) DEFAULT ''
+);
 
 -- ----------------------------
--- Table structure for user
+-- Table structure for Reservas
 -- ----------------------------
-DROP TABLE IF EXISTS `user`;
-CREATE TABLE `user` (
-  `UserID` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `UserName` varchar(255) DEFAULT NULL,
-  `Email` varchar(255) DEFAULT NULL,
-  `Password` varchar(255) DEFAULT NULL,
-  `VerifyCode` char(6) DEFAULT NULL,
-  `Status` char(8) DEFAULT '',
-  PRIMARY KEY (`UserID`)
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
+CREATE TABLE Reservas (
+    Id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    DataEntrada DATE,
+    DataSaida DATE,
+    Valor DECIMAL(10, 2),
+    FormaPagamento VARCHAR(50)
+);
+
+-- ----------------------------
+-- Table structure for Hospedes
+-- ----------------------------
+CREATE TABLE Hospedes (
+    Id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    Nome VARCHAR(100),
+    Sobrenome VARCHAR(100),
+    DataNascimento DATE,
+    Nacionalidade VARCHAR(50),
+    Telefone VARCHAR(20),
+    IdReserva INT UNSIGNED,
+    FOREIGN KEY (IdReserva) REFERENCES Reservas(Id) ON DELETE CASCADE
+);

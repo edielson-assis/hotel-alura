@@ -24,6 +24,7 @@ import com.edielson.model.ModelMessage;
 import com.edielson.model.ModelUser;
 import com.edielson.service.ServiceMail;
 import com.edielson.service.ServiceUser;
+import com.edielson.swing.views.UserMenu;
 
 import net.miginfocom.swing.MigLayout;
 
@@ -174,8 +175,9 @@ public class Main extends javax.swing.JFrame {
         try {
             ModelUser user = service.login(data);
             if (user != null) {
+                UserMenu menu = new UserMenu();
+                menu.setVisible(true);
                 this.dispose();
-                MainSystem.main(user);
             } else {
                 showMessage(Message.MessageType.ERROR, "Email ou senha incorreto");
             }

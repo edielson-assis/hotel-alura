@@ -1,6 +1,5 @@
 package com.edielson.component;
 
-import com.edielson.swing.ButtonOutLine;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.GradientPaint;
@@ -11,7 +10,13 @@ import java.awt.event.ActionListener;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.Locale;
+
+import javax.swing.ImageIcon;
 import javax.swing.JLabel;
+
+import com.edielson.swing.ButtonOutLine;
+import com.edielson.swing.views.GuestRegistration;
+
 import net.miginfocom.swing.MigLayout;
 
 public class PanelCover extends javax.swing.JPanel {
@@ -21,9 +26,9 @@ public class PanelCover extends javax.swing.JPanel {
     private MigLayout layout;
     private JLabel title;
     private JLabel description;
-    private JLabel description1;
     private ButtonOutLine button;
     private boolean isLogin;
+    private JLabel logo;
 
     public PanelCover() {
         initComponents();
@@ -34,7 +39,12 @@ public class PanelCover extends javax.swing.JPanel {
     }
 
     private void init() {
-        title = new JLabel("Hotel Alura");
+        logo = new JLabel("");
+		logo.setBounds(194, 39, 104, 107);
+		logo.setIcon(new ImageIcon(GuestRegistration.class.getResource("/com/edielson/images/Ha-100px.png")));
+        add(logo);
+
+        title = new JLabel("Bem-vindo de volta!");
         title.setFont(new Font("sansserif", 1, 30));
         title.setForeground(new Color(245, 245, 245));
         add(title);
@@ -42,9 +52,6 @@ public class PanelCover extends javax.swing.JPanel {
         description = new JLabel("Continue conectado conosco");
         description.setForeground(new Color(245, 245, 245));
         add(description);
-        description1 = new JLabel("Digite o seu email e senha");
-        description1.setForeground(new Color(245, 245, 245));
-        add(description1);
         
         button = new ButtonOutLine();
         button.setBackground(new Color(255, 255, 255));
@@ -93,7 +100,6 @@ public class PanelCover extends javax.swing.JPanel {
         login(false);
         layout.setComponentConstraints(title, "pad 0 -" + v + "% 0 0");
         layout.setComponentConstraints(description, "pad 0 -" + v + "% 0 0");
-        layout.setComponentConstraints(description1, "pad 0 -" + v + "% 0 0");
     }
 
     public void registerRight(double v) {
@@ -101,7 +107,6 @@ public class PanelCover extends javax.swing.JPanel {
         login(false);
         layout.setComponentConstraints(title, "pad 0 -" + v + "% 0 0");
         layout.setComponentConstraints(description, "pad 0 -" + v + "% 0 0");
-        layout.setComponentConstraints(description1, "pad 0 -" + v + "% 0 0");
     }
 
     public void loginLeft(double v) {
@@ -109,7 +114,6 @@ public class PanelCover extends javax.swing.JPanel {
         login(true);
         layout.setComponentConstraints(title, "pad 0 " + v + "% 0 " + v + "%");
         layout.setComponentConstraints(description, "pad 0 " + v + "% 0 " + v + "%");
-        layout.setComponentConstraints(description1, "pad 0 " + v + "% 0 " + v + "%");
     }
 
     public void loginRight(double v) {
@@ -117,7 +121,6 @@ public class PanelCover extends javax.swing.JPanel {
         login(true);
         layout.setComponentConstraints(title, "pad 0 " + v + "% 0 " + v + "%");
         layout.setComponentConstraints(description, "pad 0 " + v + "% 0 " + v + "%");
-        layout.setComponentConstraints(description1, "pad 0 " + v + "% 0 " + v + "%");
     }
 
     private void login(boolean login) {
@@ -125,12 +128,10 @@ public class PanelCover extends javax.swing.JPanel {
             if (login) {
                 title.setText("Não é Cadastrado?");
                 description.setText("Crie sua conta");
-                description1.setText("e faça a sua reserva conosco");
                 button.setText("CADASTRAR");
             } else {
-                title.setText("Hotel Alura");
+                title.setText("Bem-vindo de volta!");
                 description.setText("Continue conectado conosco");
-                description1.setText("Digite os seus dados");
                 button.setText("LOGIN");
             }
             this.isLogin = login;

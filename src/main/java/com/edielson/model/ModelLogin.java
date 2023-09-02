@@ -1,6 +1,8 @@
 package com.edielson.model;
 
-public class ModelLogin {
+import java.io.Serializable;
+
+public class ModelLogin implements Serializable {
 
     public String getEmail() {
         return email;

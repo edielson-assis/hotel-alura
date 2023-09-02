@@ -1,8 +1,10 @@
 package com.edielson.model;
 
+import java.io.Serializable;
+
 import org.mindrot.jbcrypt.BCrypt;
 
-public class ModelUser {
+public class ModelUser implements Serializable {
 
     public int getUserID() {
         return userID;
