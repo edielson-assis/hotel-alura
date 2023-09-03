@@ -1,7 +1,6 @@
 package com.edielson.swing.views;
 
 import java.awt.Color;
-import java.awt.EventQueue;
 import java.awt.Font;
 import java.awt.Toolkit;
 import java.awt.event.MouseAdapter;
@@ -13,7 +12,9 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.LocalDate;
+import java.time.Period;
 import java.time.ZoneId;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -34,7 +35,6 @@ import javax.swing.SwingConstants;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 
-import com.edielson.connection.DbException;
 import com.edielson.model.Guest;
 import com.edielson.model.Reservation;
 import com.edielson.service.GuestService;
@@ -51,7 +51,6 @@ public class Search extends JFrame {
 	private DefaultTableModel modeloHospedes;
 	private JLabel labelAtras;
 	private JLabel labelExit;
-	private Reservation reservation;
 	int xMouse, yMouse;
 
 	/**
@@ -78,7 +77,7 @@ public class Search extends JFrame {
 
 		JLabel lblTitulo = new JLabel("SISTEMA DE BUSCA");
 		lblTitulo.setForeground(new Color(12, 138, 199));
-		lblTitulo.setFont(new Font("sansserif Black", Font.BOLD, 24));
+		lblTitulo.setFont(new Font("Roboto Black", Font.BOLD, 24));
 		lblTitulo.setBounds(331, 62, 280, 42);
 		contentPane.add(lblTitulo);
 
@@ -114,7 +113,7 @@ public class Search extends JFrame {
 		modeloHospedes.addColumn("Telefone");
 		modeloHospedes.addColumn("Numero de Reserva");
 		JScrollPane scroll_tableHuespedes = new JScrollPane(tbHospedes);
-		panel.addTab("Huéspedes", new ImageIcon(Search.class.getResource("/com/edielson/images/pessoas.png")),
+		panel.addTab("Hóspedes", new ImageIcon(Search.class.getResource("/com/edielson/images/pessoas.png")),
 				scroll_tableHuespedes,
 				null);
 		scroll_tableHuespedes.setVisible(true);
@@ -190,7 +189,8 @@ public class Search extends JFrame {
 			}
 
 			@Override
-			public void mouseExited(MouseEvent e) { // Quando o usuário remove o mouse do botão, ele retornará ao estado original
+			public void mouseExited(MouseEvent e) { // Quando o usuário remove o mouse do botão, ele retornará ao estado
+													// original
 				btnexit.setBackground(Color.white);
 				labelExit.setForeground(Color.black);
 			}
@@ -246,13 +246,13 @@ public class Search extends JFrame {
 				if (tbReservas.getSelectedRow() != -1 || tbHospedes.getSelectedRow() != -1) {
 					if (tbReservas.getSelectedRow() != -1) {
 						updateReservation(modelo);
-					} 
+					}
 					if (tbHospedes.getSelectedRow() != -1) {
 						updateGuest(modeloHospedes);
-					} 
+					}
 				} else {
 					showMessage("Por favor, escolha um registro");
-				}		
+				}
 			}
 		});
 
@@ -343,11 +343,11 @@ public class Search extends JFrame {
 	}
 
 	private static boolean isNumeric(String str) {
-        if (str.replaceAll("\\s+", "").matches("\\d+")) {
-            return true;
-        }
-        return false;
-    }
+		if (str.replaceAll("\\s+", "").matches("\\d+")) {
+			return true;
+		}
+		return false;
+	}
 
 	private void clear() {
 		modelo.setRowCount(0);
@@ -355,61 +355,154 @@ public class Search extends JFrame {
 	}
 
 	private void updateReservation(DefaultTableModel modelo) {
-		reservation = new Reservation();
+		Reservation reservation = new Reservation();
 
 		Optional.ofNullable(modelo.getValueAt(tbReservas.getSelectedRow(), tbReservas.getSelectedColumn()))
 			.ifPresentOrElse(fila -> {
-			reservation.setId(Integer.valueOf(modelo.getValueAt(tbReservas.getSelectedRow(), 0).toString()));
-			try {
-				reservation.setDataEntrada(SDF.parse(modelo.getValueAt(tbReservas.getSelectedRow(), 1).toString()));
-				reservation.setDataSaida(SDF.parse(modelo.getValueAt(tbReservas.getSelectedRow(), 2).toString()));
-				reservation.setValor(reservationCalculator());
-			} catch (ParseException e) {
-				throw new DbException(e.getMessage());
+			String idStr = modelo.getValueAt(tbReservas.getSelectedRow(), 0).toString();
+			if (idStr.isEmpty()) {
+				showMessage("ID de reserva não pode estar vazio.");
+				return;
 			}
-			reservation.setFormaPagamento(modelo.getValueAt(tbReservas.getSelectedRow(), 4).toString());
 
-			instantiateReservationService().update(reservation);
-			showMessage("Registro modificado com êxito");
+			int id = Integer.parseInt(idStr);
+			if (id <= 0) {
+				showMessage("ID de reserva inválido.");
+				return;
+			}
+			try {
+				Date dataEntrada = SDF.parse(modelo.getValueAt(tbReservas.getSelectedRow(), 1).toString());
+				Date dataSaida = SDF.parse(modelo.getValueAt(tbReservas.getSelectedRow(), 2).toString());
+
+				if (dataEntrada.before(new Date())) {
+					showMessage("A reserva deve ser marcada para datas futuras.");
+					return;
+				}
+
+				if (!dataSaida.after(dataEntrada)) {
+					showMessage("Data de saída deve ser depois da data de entrada.");
+					return;
+				}
+
+				BigDecimal valor = reservationCalculator(dataEntrada, dataSaida);
+				if (valor == null) {
+					showMessage("Erro ao calcular o valor da reserva.");
+					return;
+				}
+
+				reservation.setId(id);
+				reservation.setDataEntrada(dataEntrada);
+				reservation.setDataSaida(dataSaida);
+				reservation.setValor(valor);
+				reservation.setFormaPagamento(modelo.getValueAt(tbReservas.getSelectedRow(), 4).toString());
+
+				instantiateReservationService().update(reservation);
+				showMessage("Registro modificado com êxito");
+			} catch (ParseException e) {
+				showMessage("Erro ao analisar as datas.");
+			}
 		}, () -> {});
 	}
 
 	private void updateGuest(DefaultTableModel modeloHospedes) {
 		Guest guest = new Guest();
-	
+
 		Optional.ofNullable(modeloHospedes.getValueAt(tbHospedes.getSelectedRow(), tbHospedes.getSelectedColumn()))
 			.ifPresentOrElse(filaHuesped -> {
-			guest.setId(Integer.valueOf(modeloHospedes.getValueAt(tbHospedes.getSelectedRow(), 0).toString()));
-			guest.setNome(modeloHospedes.getValueAt(tbHospedes.getSelectedRow(), 1).toString());
-			guest.setSobrenome(modeloHospedes.getValueAt(tbHospedes.getSelectedRow(), 2).toString());
-			try {
-				guest.setDataDeNascimento(SDF.parse(modeloHospedes.getValueAt(tbHospedes.getSelectedRow(), 3).toString()));
-			} catch (ParseException e) {
-				throw new DbException(e.getMessage());
+			String idStr = modeloHospedes.getValueAt(tbHospedes.getSelectedRow(), 0).toString();
+			if (idStr.isEmpty()) {
+				showMessage("ID de hóspede não pode estar vazio.");
+				return;
 			}
-			guest.setNacionalidade(modeloHospedes.getValueAt(tbHospedes.getSelectedRow(), 4).toString());
-			guest.setTelefone(modeloHospedes.getValueAt(tbHospedes.getSelectedRow(), 5).toString());
-			guest.setIdReserva(Integer.valueOf(modeloHospedes.getValueAt(tbHospedes.getSelectedRow(), 6).toString()));
 
-			instantiateGuestService().update(guest);
-			showMessage("Registro modificado com êxito");
+			int id = Integer.parseInt(idStr);
+			if (id <= 0) {
+				showMessage("ID de hóspede inválido.");
+				return;
+			}
+			try {
+				guest.setId(id);
+				String nome = modeloHospedes.getValueAt(tbHospedes.getSelectedRow(), 1).toString();
+				guest.setNome(nome);
+
+				String sobrenome = modeloHospedes.getValueAt(tbHospedes.getSelectedRow(), 2).toString();
+				guest.setSobrenome(sobrenome);
+
+				Date dataDeNascimento = SDF.parse(modeloHospedes.getValueAt(tbHospedes.getSelectedRow(), 3).toString());
+				guest.setDataDeNascimento(dataDeNascimento);
+
+				String nacionalidade = modeloHospedes.getValueAt(tbHospedes.getSelectedRow(), 4).toString();
+				guest.setNacionalidade(nacionalidade);
+
+				if (!isAlphabetic(nome)) {
+					showMessage("Deve haver apenas letras no campo Nome");
+					return;
+				}
+	
+				if (!isAlphabetic(sobrenome)) {
+					showMessage("Deve haver apenas letras no campo Sobrenome");
+					return;
+				}
+
+				String telefone = modeloHospedes.getValueAt(tbHospedes.getSelectedRow(), 5).toString();
+				if (!isNumeric(telefone)) {
+					showMessage("Telefone deve conter apenas números.");
+					return;
+				}
+				guest.setTelefone(telefone);
+
+				Integer age = ageCalculator(dataDeNascimento);
+				if (age < 18) {
+					showMessage("Hóspede deve ter pelo menos 18 anos.");
+					return;
+				}
+
+				String idStr2 = modeloHospedes.getValueAt(tbHospedes.getSelectedRow(), 6).toString();
+				if (idStr2.isEmpty()) {
+					showMessage("IdReserva não pode estar vazio.");
+					return;
+				}
+
+				int idReserva = Integer.parseInt(idStr2);
+				if (idReserva < 0) {
+					showMessage("ID de reserva inválido para o hóspede.");
+					return;
+				}
+				guest.setIdReserva(idReserva);
+
+				instantiateGuestService().update(guest);
+				showMessage("Registro modificado com êxito");
+			} catch (ParseException e) {
+				showMessage("Erro ao analisar as datas.");
+			}
 		}, () -> {});
 	}
 
-	private BigDecimal reservationCalculator() throws ParseException {
-		Date checkin = SDF.parse(modelo.getValueAt(tbReservas.getSelectedRow(), 1).toString());
-		Date checkout = SDF.parse(modelo.getValueAt(tbReservas.getSelectedRow(), 2).toString());
-	
-		BigDecimal totalValor = null;
-		
-		Duration duration = Duration.between(checkin.toInstant(), checkout.toInstant());
+	private boolean isAlphabetic(String str) {
+		return str.replaceAll("\\s+", "").matches("[a-zA-Z]+");
+	}
 
-		long totalDays = duration.toDays();
-		totalValor = BigDecimal.valueOf(100.0).multiply(BigDecimal.valueOf(totalDays));
-		String formattedValue = "R$ " + totalValor.setScale(2, RoundingMode.HALF_UP).toString();
-		
-		modelo.setValueAt(formattedValue, tbReservas.getSelectedRow(), 3);
-		return totalValor.setScale(2, RoundingMode.HALF_UP);
+	private Integer ageCalculator(Date dataNascimento) {
+		LocalDate dataN = dataNascimento.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+		LocalDate dataAtual = LocalDate.now();
+		return Period.between(dataN, dataAtual).getYears();
+	}
+
+	private BigDecimal reservationCalculator(Date checkin, Date checkout) {
+		if (checkin.before(new Date()) || checkout.before(new Date())) {
+			showMessage("A reserva deve ser marcada para datas futuras.");
+			return null;
+		} else if (!checkout.after(checkin)) {
+			showMessage("Data de saída deve ser depois da data de entrada.");
+			return null;
+		} else {
+			Duration duration = Duration.between(checkin.toInstant(), checkout.toInstant());
+			long totalDays = duration.toDays();
+			BigDecimal totalValor = BigDecimal.valueOf(100.0).multiply(BigDecimal.valueOf(totalDays));
+			String formattedValue = totalValor.setScale(2, RoundingMode.HALF_UP).toString();
+			modelo.setValueAt(formattedValue, tbReservas.getSelectedRow(), 3);
+			return totalValor.setScale(2, RoundingMode.HALF_UP);
+		}
 	}
 
 	// Código que permite movimentar a janela pela tela seguindo a posição de "x" e "y"

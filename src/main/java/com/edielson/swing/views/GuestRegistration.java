@@ -275,7 +275,7 @@ public class GuestRegistration extends JFrame {
 		if (!isFieldEmpty(txtNome) && !isFieldEmpty(txtSobrenome) && !isFieldEmpty(txtTelefone)) {
 			Integer age = ageCalculator(txtDataN.getDate());
 			if (age < 18) {
-				showMessage("Menores de 18 anos não podem ter uma reserva.");
+				showMessage("Hóspede deve ter pelo menos 18 anos.");
 				return;
 			}
 

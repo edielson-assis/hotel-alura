@@ -1,6 +1,5 @@
 package com.edielson.dao.ipml;
 
-import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -31,7 +30,7 @@ public class ReservationDaoJDBC implements ReservationDao {
 
             st.setDate(1, new java.sql.Date(reservation.getDataEntrada().getTime()));
             st.setDate(2, new java.sql.Date(reservation.getDataSaida().getTime()));
-            st.setBigDecimal(3, BigDecimal.valueOf(reservation.getValor().doubleValue()));
+            st.setBigDecimal(3, reservation.getValor());
             st.setString(4, reservation.getFormaPagamento());
 
             int rowsAffected = st.executeUpdate();
